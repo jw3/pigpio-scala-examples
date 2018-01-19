@@ -29,11 +29,14 @@ object Callbacks extends App {
       println(s"initialized pigpio v$ver")
   }
 
-  println("Example of reading callbacks from pin #4")
+  val ipin = 24
+  val opin = 25
+
+  println(s".:| Example of writing pin $opin to pin $ipin |:.")
 
   // create io pins
-  val in = system.actorOf(GpioPin.props(4))
-  val out = system.actorOf(GpioPin.props(3))
+  val in = GpioPin(ipin)
+  val out = GpioPin(opin)
 
   // create a listener and subscribe to callbacks
   val listener = system.actorOf(Props[PrintingActor])
