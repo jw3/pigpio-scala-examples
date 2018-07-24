@@ -1,25 +1,37 @@
+
 organization := "com.github.jw3"
 name := "pigpio-scala-examples"
 version := "0.1"
 
-scalaVersion := "2.11.8"
-scalacOptions += "-target:jvm-1.8"
+scalaVersion := "2.12.6"
+scalacOptions ++= Seq(
+  "-encoding", "UTF-8",
 
-resolvers += "jw3 at bintray" at "https://dl.bintray.com/jw3/maven"
+  "-feature",
+  "-unchecked",
+  "-deprecation",
+
+  "-language:postfixOps",
+  "-language:implicitConversions",
+
+  "-Ywarn-unused-import",
+  "-Xfatal-warnings",
+  "-Xlint:_"
+)
 
 libraryDependencies ++= {
-  val akkaVersion = "2.4.4"
-  val scalatestVersion = "3.0.0-M15"
+  lazy val akkaVersion = "2.5.14"
+  lazy val akkaHttpVersion = "10.1.3"
+  lazy val scalatestVersion = "3.0.3"
 
   Seq(
-    "com.rxthings" %% "webhooks" % "0.5",
-    "com.github.jw3" %% "pigpio-scala" % "0.1-SNAPSHOT",
+    "com.github.jw3" %% "pigpio-scala" % "0.1.0",
 
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
 
-    "ch.qos.logback" % "logback-classic" % "1.1.7" % Runtime,
-    "com.typesafe.akka" %% "akka-slf4j" % akkaVersion % Runtime,
+    "ch.qos.logback" % "logback-classic" % "1.2.3",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
 
     "org.scalactic" %% "scalactic" % scalatestVersion % Test,
     "org.scalatest" %% "scalatest" % scalatestVersion % Test,
@@ -29,5 +41,7 @@ libraryDependencies ++= {
 }
 
 enablePlugins(JavaAppPackaging)
-dockerRepository := Some("jwiii")
 dockerBaseImage := "jwiii/pigpio"
+dockerExposedPorts := Seq(9000)
+dockerUpdateLatest := true
+
