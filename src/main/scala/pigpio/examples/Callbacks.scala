@@ -13,14 +13,23 @@ import scala.concurrent.duration.{Duration, DurationInt}
   * Simple demonstration of an Actor based GPIO Callback
   */
 object Callbacks extends App {
-  println("Example of reading callbacks from pin #4")
-
-  implicit val system: ActorSystem = ActorSystem("Callbacks")
-  implicit val lgpio = PigpioLibrary.INSTANCE
+  implicit val system: ActorSystem = ActorSystem("pigpio-example")
+  implicit val lgpio: PigpioLibrary = PigpioLibrary.INSTANCE
 
   // initialize pigpio
-  val ver = lgpio.gpioInitialise()
-  println(s"Initialized pigpio v$ver")
+  lgpio.gpioInitialise() match {
+    case PigpioLibrary.PI_INIT_FAILED ⇒
+      println("pigpio init failed")
+      val f = system.terminate()
+      println("terminating actor system")
+      Await.ready(f, Duration.Inf)
+      System.exit(1)
+
+    case ver ⇒
+      println(s"initialized pigpio v$ver")
+  }
+
+  println("Example of reading callbacks from pin #4")
 
   // create io pins
   val in = system.actorOf(GpioPin.props(4))
@@ -44,9 +53,14 @@ object Callbacks extends App {
   * The Actor receiving the callback
   */
 class PrintingActor extends Actor {
+  var cnt = 0
+
   def receive: Receive = {
     case m: GpioAlert =>
-      println(m)
+      cnt += 1
+
+      if (cnt % 100 == 0) print(".")
+      if (cnt % 1000 == 0) print(cnt / 1000)
   }
 }
 
