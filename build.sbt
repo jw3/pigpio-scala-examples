@@ -1,7 +1,7 @@
 
 organization := "com.github.jw3"
 name := "pigpio-scala-examples"
-version := "0.2"
+version := "0.3"
 
 scalaVersion := "2.12.6"
 scalacOptions ++= Seq(
