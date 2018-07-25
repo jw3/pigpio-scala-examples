@@ -1,7 +1,8 @@
+enablePlugins(GitVersioning, JavaAppPackaging)
 
 organization := "com.github.jw3"
 name := "pigpio-scala-examples"
-version := "0.3"
+git.useGitDescribe := true
 
 scalaVersion := "2.12.6"
 scalacOptions ++= Seq(
@@ -40,7 +41,6 @@ libraryDependencies ++= {
   )
 }
 
-enablePlugins(JavaAppPackaging)
 dockerBaseImage := "jwiii/pigpio"
 dockerExposedPorts := Seq(9000)
 dockerUpdateLatest := true
