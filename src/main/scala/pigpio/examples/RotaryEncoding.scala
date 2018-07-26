@@ -43,8 +43,11 @@ object RotaryEncoding extends App {
       println(s"initialized pigpio v$ver")
   }
 
-  println("Example of reading rotary encoder on pins 20/21")
-  system.actorOf(Encoder.props(20, 21))
+  val p1 = 20
+  val p2 = 21
+
+  println(s".:| Example of reading rotary encoder on pins $p1/$p2 |:.")
+  system.actorOf(Encoder.props(p1, p2))
 
   Await.ready(system.whenTerminated, Duration.Inf)
 }
@@ -65,23 +68,29 @@ class Encoder(p1: UserGpio, p2: UserGpio)(implicit lgpio: PigpioLibrary)
   var l2: Level = Low
   var prev: UserGpio = 0
 
+  pin1 ! Listen()
+  pin2 ! Listen()
+
   pin1 ! InputPin
   pin2 ! InputPin
 
   pin1 ! PullUp
   pin2 ! PullUp
 
-  pin1 ! Listen()
-  pin2 ! Listen()
-
   def receive: Receive = {
-    case GpioAlert(p, l, t) if p != prev ⇒
-      p match {
-        case `p1` if l.toBoolean && l2.toBoolean ⇒
-          println("1")
-        case `p2` if l.toBoolean && l1.toBoolean ⇒
-          println("-1")
-      }
+    case GpioAlert(p, l, _) if p != prev ⇒
+      if (p == p1) l1 = l else l2 = l
+
+      if (l == High)
+        p match {
+          case `p1` if l2 == High ⇒
+            println("1")
+          case `p2` if l1 == High ⇒
+            println("-1")
+          case _ ⇒
+        }
+
       prev = p
   }
+
 }
