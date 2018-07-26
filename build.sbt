@@ -44,4 +44,5 @@ libraryDependencies ++= {
 dockerBaseImage := "jwiii/pigpio"
 dockerExposedPorts := Seq(9000)
 dockerUpdateLatest := true
-
+dockerEntrypoint := Seq()
+dockerEnvVars := Map("PATH" → "$PATH:/opt/docker/bin")
