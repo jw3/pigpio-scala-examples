@@ -79,16 +79,18 @@ class Encoder(p1: UserGpio, p2: UserGpio)(implicit lgpio: PigpioLibrary)
 
   def receive: Receive = {
     case GpioAlert(p, l, _) if p != prev ⇒
-      if (p == p1) l1 = l else l2 = l
+      if (p == p1)
+        l1 = l
+      else
+        l2 = l
 
-      if (l == High)
-        p match {
-          case `p1` if l2 == High ⇒
-            println("1")
-          case `p2` if l1 == High ⇒
-            println("-1")
-          case _ ⇒
-        }
+      (p, l, l1, l2) match {
+        case (`p1`, High, _, High) ⇒
+          println("1")
+        case (`p2`, High, High, _) ⇒
+          println("-1")
+        case _ ⇒
+      }
 
       prev = p
   }
