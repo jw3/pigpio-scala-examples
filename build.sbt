@@ -26,7 +26,7 @@ libraryDependencies ++= {
   lazy val scalatestVersion = "3.0.3"
 
   Seq(
-    "com.github.jw3" %% "pigpio-scala" % "0.1.0",
+    "com.github.jw3" %% "pigpio-scala" % "0.1.1",
 
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,

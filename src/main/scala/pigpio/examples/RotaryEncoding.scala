@@ -68,6 +68,9 @@ class Encoder(p1: UserGpio, p2: UserGpio)(implicit lgpio: PigpioLibrary)
   pin1 ! InputPin
   pin2 ! InputPin
 
+  pin1 ! PullUp
+  pin2 ! PullUp
+
   pin1 ! Listen()
   pin2 ! Listen()
 
