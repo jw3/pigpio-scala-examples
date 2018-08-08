@@ -8,6 +8,17 @@ import pigpio.scaladsl._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+/**
+  *
+    r ------------ 5v
+               +-- 3v3
+               |
+              4k7
+               |
+    y ------------ p26
+    b ------------ g
+  *
+  */
 object FlowMetering extends App {
   implicit val system: ActorSystem = ActorSystem("pigpio-example")
   implicit val lgpio: PigpioLibrary = PigpioLibrary.INSTANCE
@@ -52,6 +63,7 @@ class FlowMeter(p1: UserGpio)(implicit lgpio: PigpioLibrary)
   pin1 ! PullUp
 
   var c = 0
+  var a = 0D
   var p = 0L
 
   def receive: Receive = {
@@ -60,7 +72,8 @@ class FlowMeter(p1: UserGpio)(implicit lgpio: PigpioLibrary)
       c += 1
 
       if (k != p) {
-        println(c / FlowMeter.ppl)
+        a += c / FlowMeter.ppl
+        println(s"${a}l")
         p = k
         c = 0
       }
