@@ -7,3 +7,4 @@ usage
 
 ### references
 - https://github.com/joan2937/pigpio/tree/master/EXAMPLES/CPP/ROTARY_ENCODER
+- https://raspberrypi.stackexchange.com/a/62302
