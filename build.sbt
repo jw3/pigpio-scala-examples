@@ -20,6 +20,8 @@ scalacOptions ++= Seq(
   "-Xlint:_"
 )
 
+resolvers += Resolver.bintrayRepo("jw3", "maven")
+
 libraryDependencies ++= {
   lazy val akkaVersion = "2.5.14"
   lazy val akkaHttpVersion = "10.1.3"
