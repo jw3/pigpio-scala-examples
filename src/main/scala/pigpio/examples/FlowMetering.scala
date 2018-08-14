@@ -7,6 +7,7 @@ import pigpio.scaladsl._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationLong
 
 /**
   *
@@ -15,7 +16,7 @@ import scala.concurrent.duration.Duration
                |
               4k7
                |
-    y ------------ p26
+    y ------------ p27
     b ------------ g
   *
   */
@@ -36,7 +37,7 @@ object FlowMetering extends App {
       println(s"initialized pigpio v$ver")
   }
 
-  val p1 = 26
+  val p1 = 27
 
   println(s".:| Example of reading flow sensor on pin $p1 |:.")
   system.actorOf(FlowMeter.props(p1))
@@ -49,7 +50,7 @@ object FlowMeter {
     Props(new FlowMeter(p1))
 
   case object Print
-  val ppl: Double = 5880
+  val pulsesPerLiter: Double = 5880
 }
 
 class FlowMeter(p1: UserGpio)(implicit lgpio: PigpioLibrary)
@@ -68,11 +69,11 @@ class FlowMeter(p1: UserGpio)(implicit lgpio: PigpioLibrary)
 
   def receive: Receive = {
     case GpioAlert(_, _, t) ⇒
-      val k = t / 1000000
+      val k = t.micros.toSeconds
       c += 1
 
       if (k != p) {
-        a += c / FlowMeter.ppl
+        a += c / FlowMeter.pulsesPerLiter
         println(s"${a}l")
         p = k
         c = 0
