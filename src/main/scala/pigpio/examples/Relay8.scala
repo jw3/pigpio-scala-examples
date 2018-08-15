@@ -25,50 +25,38 @@ object Relay8 extends App {
       println(s"initialized pigpio v$ver")
   }
 
-  val lower = system.actorOf(R8.props(0), "stack0")
-  val upper = system.actorOf(R8.props(1), "stack1")
+  val relays = 1 to 8
+
+  val stacks = 0 to 3 map { i ⇒
+    system.actorOf(R8.props(i), s"stack-$i")
+  }
+
+  val allOn = Rs(relays.map(id ⇒ R(id, Low)))
+  val allOff = Rs(relays.map(id ⇒ R(id, High)))
+
+  println("test bulk on")
+  stacks.foreach(_ ! allOn)
+
+  println("test bulk off")
+  stacks.foreach(_ ! allOff)
 
   Thread.sleep(2000)
 
-  println("all off")
-  lower ! AllOpen
-  upper ! AllOpen
+  println("flip everyone on")
+  stacks
+    .map(_ → relays)
+    .foreach(rr ⇒ rr._2.foreach(relay ⇒ rr._1 ! R(relay, Low)))
 
-  println("sequential")
+  Thread.sleep(2000)
 
-  lower ! R(3, Low)
-  lower ! R(2, Low)
-  lower ! R(1, Low)
-
-  upper ! R(3, Low)
-  lower ! R(1, High)
-  upper ! R(2, Low)
-  lower ! R(2, High)
-  upper ! R(1, Low)
-  lower ! R(3, High)
-
-  upper ! R(1, High)
-  Thread.sleep(1000)
-  upper ! R(2, High)
-  Thread.sleep(1000)
-  upper ! R(3, High)
-
-  // all off again
-
-  println("concurrent")
-
-  val on = Rs(List(R(1, Low), R(2, Low), R(3, Low)))
-  val off = Rs(List(R(1, High), R(2, High), R(3, High)))
-
-  lower ! on
-  Thread.sleep(1000)
-  upper ! on
-  Thread.sleep(1000)
-  lower ! off
-  Thread.sleep(1000)
-  upper ! off
+  println("flip everyone off ;)")
+  stacks
+    .map(_ → relays)
+    .foreach(rr ⇒ rr._2.foreach(relay ⇒ rr._1 ! R(relay, High)))
 
   println("done")
+
+  system.terminate()
 }
 
 object R8 {
