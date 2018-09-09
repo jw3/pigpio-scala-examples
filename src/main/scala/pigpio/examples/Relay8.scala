@@ -91,7 +91,7 @@ class R8(stack: Int)(implicit lgpio: PigpioLibrary)
     with Stash
     with ActorLogging {
 
-  import context.dispatcher
+  import context.{become, dispatcher}
 
   def receive: Receive = {
     init().foreach(self ! _)
@@ -99,7 +99,10 @@ class R8(stack: Int)(implicit lgpio: PigpioLibrary)
     {
       case Handle(i2c) ⇒
         unstashAll()
-        context become initialized(i2c, R8.AllOpenState)
+        // todo should have option to write initial state
+        become(
+          initialized(i2c, R8.AllOpenState)
+        )
 
       case _ ⇒ stash()
     }
@@ -111,17 +114,20 @@ class R8(stack: Int)(implicit lgpio: PigpioLibrary)
     {
       case R(ch, lvl: Level) ⇒
         log.info("writing {} {}", ch, lvl)
-        context become writing(i2c, R8.mask(ch, state, lvl))
+        become(writing(i2c, R8.mask(ch, state, lvl)))
 
       case Rs(rs) ⇒
         log.info("bulk write")
-        context become writing(
-          i2c,
-          rs.foldLeft(state)((l, r) ⇒ R8.mask(r.channel, l, r.level))
-        )
+        become(
+          writing(
+            i2c,
+            rs.foldLeft(state)((l, r) ⇒ R8.mask(r.channel, l, r.level))
+          ))
 
       case AllOpen ⇒
-        context become writing(i2c, R8.AllOpenState)
+        become(
+          writing(i2c, R8.AllOpenState)
+        )
     }
   }
 
@@ -131,7 +137,9 @@ class R8(stack: Int)(implicit lgpio: PigpioLibrary)
     {
       case Done ⇒
         unstashAll()
-        context become initialized(i2c, v)
+        become(
+          initialized(i2c, v)
+        )
 
       case _ ⇒ stash()
     }
