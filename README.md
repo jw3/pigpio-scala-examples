@@ -1,6 +1,8 @@
 pigpio-scala example
 ===
 
+https://github.com/jw3/pigpio-scala
+
 usage
 
 `docker run --rm --privileged -u root -v /sys:/sys -v /dev/mem:/dev/mem pigpio-scala-examples`
