@@ -1,12 +1,8 @@
 package pigpio.examples
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Timers}
-import pigpio.examples.Stepper.{
-  NextStep,
-  StartStepping,
-  StepDirection,
-  StepSize
-}
+import pigpio.examples.GpioPinGroup.{MemberLevel, MemberPinMode}
+import pigpio.examples.Stepper.{NextStep, StartStepping, StepDirection, StepSize}
 import pigpio.scaladsl._
 
 import scala.concurrent.Await
@@ -72,12 +68,12 @@ class Stepper(size: StepSize, pins: Seq[UserGpio])(
     with Timers
     with ActorLogging {
 
-  val gpio: Seq[ActorRef] = pins.map(p ⇒ context.actorOf(GpioPin.props(p)))
-  gpio.foreach(_ ! OutputPin)
+  val gpio: ActorRef = context.actorOf(GpioPinGroup.props(pins: _*))
+  gpio ! MemberPinMode(OutputPin, pins)
 
   def ready: Receive = {
     case StartStepping(dir, delay) ⇒
-      gpio.zip(Stepper.levels(size.steps.head)).foreach(x ⇒ x._1 ! x._2)
+      levels(0).foreach(gpio ! _)
       context.become(stepping(size.next(0, dir), dir, delay))
   }
 
@@ -89,10 +85,13 @@ class Stepper(size: StepSize, pins: Seq[UserGpio])(
 
     {
       case NextStep ⇒
-        gpio.zip(Stepper.levels(size.steps.head)).foreach(x ⇒ x._1 ! x._2)
+        levels(step).foreach(gpio ! _)
         context.become(stepping(size.next(step, dir), dir, delay))
     }
   }
+
+  def levels(step: Int): Seq[MemberLevel] =
+    pins.zip(Stepper.levels(size.steps(step))).map(t ⇒ MemberLevel(t._2, Seq(t._1)))
 
   def receive: Receive = ready
 }
