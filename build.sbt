@@ -29,6 +29,7 @@ libraryDependencies ++= {
 
   Seq(
     "com.github.jw3" %% "pigpio-scala" % "0.1.1",
+    "com.github.jw3" % "pigpio-vl53l1x" % "0.1.1",
 
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
