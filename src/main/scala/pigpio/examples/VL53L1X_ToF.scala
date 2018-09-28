@@ -31,12 +31,11 @@ object VL53L1X_ToF extends App {
   val vl53l1 = Vl53l1xLibrary.INSTANCE
 
   val i2c = lgpio.i2cOpen(1, 0x29, 0)
-  val Dev = new VL53L1_Dev_t
-
-  Dev.I2cHandle = {
-    val h = new I2C_HandleTypeDef.ByReference
-    h.dummy = i2c
-    h
+  val Dev = {
+    val dev = new VL53L1_Dev_t
+    dev.I2cHandle = new I2C_HandleTypeDef.ByReference
+    dev.I2cHandle.dummy = i2c
+    dev
   }
 
   vl53l1.VL53L1_software_reset(Dev)
