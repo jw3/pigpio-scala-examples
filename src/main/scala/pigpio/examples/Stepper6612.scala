@@ -1,16 +1,21 @@
 package pigpio.examples
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Timers}
-import pigpio.examples.GpioPinGroup.{MemberLevel, MemberPinMode}
-import pigpio.examples.Stepper.{NextStep, StartStepping, StepDirection, StepSize}
+import pigpio.examples.GpioPinGroup.{MemberLevels, MemberPinMode}
+import pigpio.examples.Stepper._
 import pigpio.scaladsl._
 
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext}
 
 object Stepper6612 extends App {
   implicit val system: ActorSystem = ActorSystem("pigpio-example")
   implicit val lgpio: PigpioLibrary = PigpioLibrary.INSTANCE
+
+  val delay = args.headOption match {
+    case Some(v) ⇒ v.toInt.millis
+    case None ⇒ 1.micros
+  }
 
   // initialize pigpio
   lgpio.gpioInitialise() match {
@@ -25,10 +30,18 @@ object Stepper6612 extends App {
       println(s"initialized pigpio v$ver")
   }
 
-  val gpio = Seq(4, 5, 6, 7).map(UserGpio(_))
-  println(s".:| Example of stepping with a TB6612 on pins $gpio |:.")
+  val (a2, a1, b1, b2) = (17, 18, 22, 23)
+  val gpio = Seq(a2, a1, b1, b2).map(UserGpio)
 
-  system.actorOf(Stepper.props(Stepper.HalfStep, gpio))
+  println(s".:| Example of stepping with a TB6612 on pins a2=$a2 a1=$a1 b1=$b1 b2=$b2 |:.")
+
+  val stepper = system.actorOf(Stepper.props(Stepper.FullStep, gpio))
+  stepper ! StartStepping(Forward, delay)
+
+  import ExecutionContext.Implicits.global
+  Await.ready(system.whenTerminated, Duration.Inf).andThen{
+    case _ ⇒ lgpio.gpioTerminate()
+  }
 }
 
 object Stepper {
@@ -44,15 +57,19 @@ object Stepper {
       case Reverse ⇒ if (prev > 0) prev - 1 else size - 1
     }
   }
-  object FullStep extends StepSize { val steps = Seq(8, 4, 2, 1) }
-  object HalfStep extends StepSize { val steps = Seq(8, 12, 4, 6, 2, 3, 1, 9) }
 
-  def levels(v: Int): Seq[Level] = Seq(
-    Level(v & 1 << 3),
-    Level(v & 1 << 2),
-    Level(v & 1 << 1),
-    Level(v & 1)
-  )
+  // A+ A- B+ B-
+  // ===========
+  // A+B+, A-B+, A-B-, A+B-
+  object FullStep extends StepSize { val steps = Seq(10, 6, 5, 9) }
+  // A+B+, A+, A+B-, B-, A-B-, A-, A-B+, B+
+  object HalfStep extends StepSize { val steps = Seq(10, 2, 6, 4, 5, 1, 9, 8) }
+
+  def levels(v: Int): Seq[Level] = v.toBinaryString.reverse.padTo(4, '0').reverse.map {
+    case '0' ⇒ Low
+    case '1' ⇒ High
+    case _ ⇒ throw BadLevel()
+  }
 
   sealed trait StepDirection
   object Forward extends StepDirection
@@ -73,8 +90,7 @@ class Stepper(size: StepSize, pins: Seq[UserGpio])(
 
   def ready: Receive = {
     case StartStepping(dir, delay) ⇒
-      levels(0).foreach(gpio ! _)
-      context.become(stepping(size.next(0, dir), dir, delay))
+      context.become(stepping(0, dir, delay))
   }
 
   def stepping(step: Int,
@@ -85,13 +101,15 @@ class Stepper(size: StepSize, pins: Seq[UserGpio])(
 
     {
       case NextStep ⇒
-        levels(step).foreach(gpio ! _)
+        gpio ! levels(step)
         context.become(stepping(size.next(step, dir), dir, delay))
     }
   }
 
-  def levels(step: Int): Seq[MemberLevel] =
-    pins.zip(Stepper.levels(size.steps(step))).map(t ⇒ MemberLevel(t._2, Seq(t._1)))
+  def levels(step: Int): MemberLevels = {
+    val x = pins.zip(Stepper.levels(size.steps(step)))
+    GpioPinGroup.MemberLevels(x)
+  }
 
   def receive: Receive = ready
 }

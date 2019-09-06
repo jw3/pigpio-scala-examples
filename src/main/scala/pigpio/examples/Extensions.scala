@@ -16,6 +16,7 @@ object GpioPinGroup {
 
   case class MemberQueryPinMode(gpio: UserGpio)
   case class MemberLevel(level: Level, gpio: Seq[UserGpio])
+  case class MemberLevels(data: Seq[(UserGpio, Level)])
   case class MemberPinMode(mode: PinMode, gpio: Seq[UserGpio])
   case class MemberListen(gpio: Seq[UserGpio])
   case class MemberUnlisten(gpio: Seq[UserGpio])
@@ -65,6 +66,14 @@ class GpioPinGroup(gpio: Seq[UserGpio])(implicit lgpio: PigpioLibrary) extends A
       case MemberLevel(l, pins) ⇒
         pins.filter(gpio.contains).filterNot(i.contains).foreach{p ⇒
           DefaultDigitalIO.gpioWrite(p, l) match {
+            case Success(r) =>
+            case Failure(e) => throw e
+          }
+        }
+
+      case MemberLevels(d) ⇒
+        d.filter(p ⇒ gpio.contains(p._1)).filterNot(p ⇒ i.contains(p._1)).foreach { p ⇒
+          DefaultDigitalIO.gpioWrite(p._1, p._2) match {
             case Success(r) =>
             case Failure(e) => throw e
           }
