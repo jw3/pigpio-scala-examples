@@ -149,7 +149,7 @@ class Dev(int: UserGpio, xshut: UserGpio)(implicit lgpio: PigpioLibrary) extends
 
     {
       case Sample ⇒
-        log.info("starting measurement")
+        log.debug("starting measurement")
         vl53l1.VL53L1_ClearInterruptAndStartMeasurement(dev)
 
         if (0 == vl53l1.VL53L1_WaitMeasurementDataReady(dev)) {
