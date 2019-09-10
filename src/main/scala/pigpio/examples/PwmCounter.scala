@@ -4,7 +4,7 @@ import akka.Done
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import pigpio.examples.Counter.Go
+import pigpio.examples.Counter.{Cb, Go}
 import pigpio.scaladsl.GpioImplicits._
 import pigpio.scaladsl.{GpioPin, OutputPin, PigpioLibrary, _}
 
@@ -29,9 +29,6 @@ object PwmCounter extends App {
   }
 
   println(s".:| Example of counting pwm pulses |:.")
-
-  val waves = 5
-  val wid = Array.fill(waves)(0)
 
   val opin = 24 // pwm
   val dpin = 25 // direction
@@ -60,7 +57,7 @@ object PwmCounter extends App {
   counter ! Go
 
   implicit val to = Timeout(1000.seconds)
-  val done = counter ? "ready?"
+  val done = counter ? Cb
 
   Await.ready(done, Duration.Inf)
 
@@ -73,6 +70,7 @@ object Counter {
   val Left: Direction = High
   val Right: Direction = Low
 
+  case object Cb
   case object Go
 
   def props(c: Int, o: Int)(implicit lgpio: PigpioLibrary) = Props(new Counter(c, o, lgpio))
@@ -89,7 +87,7 @@ class Counter(c: Int, o: Int, lgpio: PigpioLibrary) extends Actor {
       // move at half speed
       lgpio.gpioPWM(o, 128)
 
-    case "ready?" ⇒
+    case Cb ⇒
       cb = Some(sender())
 
     case GpioAlert(p, l, t) =>
